@@ -129,26 +129,36 @@ featROIs0 =  featROIs0.randomColumn(columnName= 'random', distribution= 'normal'
 featROIs1 =  featROIs1.randomColumn(columnName= 'random', distribution= 'normal')
 featROIs2 =  featROIs2.randomColumn(columnName= 'random', distribution= 'normal')
 
-newFeatROIs = featROIs0.filter(ee.Filter.lt('random', param['class']['0'])).merge(
-                featROIs1.filter(ee.Filter.lt('random', param['class']['1']))).merge(
+newFeatROIs0 = featROIs0.filter(ee.Filter.lt('random', param['class']['0']))
+
+newFeatROIs1 = featROIs1.filter(ee.Filter.lt('random', param['class']['1'])).merge(
                 featROIs2)
 
-for kk, vv in newFeatROIs.aggregate_histogram('label').getInfo().items():
+for kk, vv in newFeatROIs0.aggregate_histogram('label').getInfo().items():
+    print("classe {} : com {} pontos carregados".format(kk, vv))
+
+for kk, vv in newFeatROIs1.aggregate_histogram('label').getInfo().items():
     print("classe {} : com {} pontos carregados".format(kk, vv))
 
 bands = ['VV','VH','vhcorr',"VH_ang","VV_ang",'VV_comp','VHcorr_comp']
 
 # // Overlay the points on the imagery to get training. ##
-training = SVixx.select(bands).sampleRegions(
-                                    collection= newFeatROIs, 
+trainingNotOl = SVixx.select(bands).sampleRegions(
+                                    collection= newFeatROIs0, 
                                     properties= ['label'], 
                                     scale= 10,
                                     tileScale= 2,
                                     geometries= True
                                 )
-
-functExport(training, 'ptsROIs_Oleo_bndTransform')
-
+trainingOl = SVixx.select(bands).sampleRegions(
+                                    collection= newFeatROIs1, 
+                                    properties= ['label'], 
+                                    scale= 10,
+                                    tileScale= 2,
+                                    geometries= True
+                                )
+functExport(trainingOl, 'ptsROIs_Oleo_bndTransformOl')
+functExport(trainingNotOl, 'ptsROIs_Oleo_bndTransformNotO')
 
 #/////////////////////////////////////////////////////////////////
 #//============== Gerando novas features  ======================//
@@ -260,11 +270,19 @@ bands = ['VV','VH','VV_comp','VHcorr_comp', bndtoFeat + '_contrast', bndtoFeat +
             bndtoFeat +'gradient', bndtoFeat + 'edguy']
 
 ## // Overlay the points on the imagery to get training. ##
-training = SVixx.select(bands).sampleRegions(
-                                    collection= newFeatROIs, 
+trainingNotOl = SVixx.select(bands).sampleRegions(
+                                    collection= newFeatROIs0, 
                                     properties= ['label'], 
                                     scale= 10,
                                     tileScale= 2,
                                     geometries= True
                                 )
-functExport(training, 'pointsROIs_Oleo')
+trainingOl = SVixx.select(bands).sampleRegions(
+                                    collection= newFeatROIs1, 
+                                    properties= ['label'], 
+                                    scale= 10,
+                                    tileScale= 2,
+                                    geometries= True
+                                )
+functExport(trainingOl, 'pointsROIs_OleoOl')
+functExport(trainingOl, 'pointsROIs_OleoNotO')
